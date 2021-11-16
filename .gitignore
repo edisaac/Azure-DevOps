@@ -1,0 +1,4 @@
+node_modules
+repo-permissions-sample/.env
+
+repo-permissions-sample/package-lock.json

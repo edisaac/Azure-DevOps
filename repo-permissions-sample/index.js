@@ -1,67 +1,62 @@
+const dotenv = require('dotenv');
+dotenv.config();
+
 const request =  require('request');
 const vsoNodeApi = require('azure-devops-node-api');
 // Create a personal from azure devops
-const token = "<INSERT TOKEN>";
+const token = process.env.TOKEN;
 // Url to your organization
-const serverUrl = '<INSERT REPO URL>'; 
+const orgName=process.env.ORG_NAME
+const serverUrl = `https://dev.azure.com/${orgName}`; 
 let authHandler = vsoNodeApi.getPersonalAccessTokenHandler(token); 
 let AzDO = new vsoNodeApi.WebApi(serverUrl, authHandler, undefined);
 
 async function run() {
-  var constructedTeams = {}
+  var constructedProjects = {}
+  
   try {
     var coreApi = await AzDO.getCoreApi(); 
-    var teams = await coreApi.getAllTeams();
+    var projects = await coreApi.getProjects();
+     
     var i;
-      for (i = 0; i < teams.length; i++) { 
-        const team = teams[i]
+      for (i = 0; i < projects.length; i++) { 
+        const project = projects[i]
         const obj = {
-          url: team['url'],
-          projectId: team['projectId'],
-          teamName: team['name'],
-          teamId: team['id']
+          url: project['url'],
+          projectId: project['projectId'],
+          projectName: project['name'] 
         }
-        if (!constructedTeams[team['projectName']]){
-          constructedTeams[team['projectName']] = [obj]
+        if (!constructedProjects[project['projectName']]){
+          constructedProjects[project['projectName']] = [obj]
         } else {
-          constructedTeams[team['projectName']].push(obj)
+          constructedProjects[project['projectName']].push(obj)
         }
       }
-      const teamsToUse = await constructedTeams
-      const finalConstruct = await constructTeams(teamsToUse)
+      const projectsToUse = await constructedProjects
+      const finalConstruct = await constructTeams(projectsToUse)
       return finalConstruct
   } catch(err) {
-    console.log(`err ${JSON.stringify(err, null, 2)}`)
+    console.log(`err 1 ${JSON.stringify(err, null, 2)}`)
   }
 }
 
-const constructTeams = async (teams) => {
+const constructTeams = async (projects) => {
   const obj = {}
   var coreApi = await AzDO.getCoreApi(); 
-  const ids = Object.keys(teams)
+  const ids = Object.keys(projects)
   await asyncForEach(ids, async (key) => {
-    await asyncForEach(teams[key], async (el) => {
+    await asyncForEach(projects[key], async (el) => {
       const temp = {}
-      const {projectId, teamId} = el
-      const url = `https://<INSERT TOKEN>@<INSERT URL>/${projectId}/_api/_identity/Display?__v=5&tfid=${teamId}`
+      const {projectId} = el
+      const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/tfvc/changesets?api-version=6.0&$top=1`
+       
       request.get(url
       , function(error, response, body) {
           const parsedBody = JSON.parse(body)
-          if (parsedBody && parsedBody['security'] && parsedBody['security']['permissions']) {
-            delete parsedBody['security']
-            console.log(`Permissions: ${JSON.stringify(parsedBody, null, 2)}`)
-          } else {
-            console.log(`not found`)
-          }
+          console.log(`tfs: ${JSON.stringify(parsedBody, null, 2)}`)
+          
       } );
-      const members = await coreApi.getTeamMembersWithExtendedProperties(el.projectId, el.teamId);
-      const NameMembers = await members.map(member => member.identity.displayName).join(', ')
-      temp[el.teamName] = NameMembers
-      if (!obj[key] || Object.keys(obj[key]).length == 0) {
-        obj[key] = temp
-      } else {
-        Object.assign(obj[key], temp) 
-      }
+ 
     })
   })
   console.log(`Org: ${JSON.stringify(obj, null, 2)}`)
