@@ -8,12 +8,13 @@ const vsoNodeApi = require('azure-devops-node-api');
 const token = process.env.TOKEN;
 // Url to your organization
 const orgName=process.env.ORG_NAME
+const commitLen=process.env.COMMITS_LEN
 const serverUrl = `https://dev.azure.com/${orgName}`; 
 let authHandler = vsoNodeApi.getPersonalAccessTokenHandler(token); 
 let AzDO = new vsoNodeApi.WebApi(serverUrl, authHandler, undefined);
 
-let repos = []
-
+var commits = []
+var gitRepos =[]
 
 async function getProjects(){
   let coreApi = await AzDO.getCoreApi(); 
@@ -27,65 +28,69 @@ async function getProjects(){
  }); 
  return constructedProjects
 }
-function myFirstFunction(callback) {
- 
+
+function obtenerProyectos(callback) { 
    getProjects(). then(projects => callback(null,projects));
 }
  
-function myLastFunction(projects, callback) {
+function obtenerReposTfsCommits(projects, callback) {
+
   console.log(`projects: ${JSON.stringify(projects.length, null, 2)}`)
   // arg1 now equals 'three'
-  async.eachSeries(projects,getProjectReposTfs, function(err) {
-
-    console.log(`repos 1 ${JSON.stringify(repos, null, 2)}`)
-
+  async.reduce(projects,[],getProjectReposTfs, function(err,result) {
     if (err) return callback(err);
-    callback(null, 'done');
-      
-    
+    commits=result;
+    callback(null, projects);
   })
  
 }
-function run2(){
+
+ 
+function run(){
   async.waterfall([
-    myFirstFunction, 
-    myLastFunction,
+    obtenerProyectos, 
+    obtenerReposTfsCommits,
 ], function (err, result) {
   console.log(err)
-  console.log(result)
+  console.log(commits)
     // result now equals 'done'
 });
 }
 
 
-const getProjectReposTfs = function(project, callback) {
+const getProjectReposTfs = function(memo,project, callback) {
 
       const {projectId,projectName} = project
-      const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/tfvc/changesets?api-version=6.0&$top=1`
-      console.log(`${projectName}`)
+
+      const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/tfvc/changesets?api-version=6.0&$top=${commitLen}`
+     
       request.get(url, {timeout: 120000}
       , function(error, response, body) {
           if (error) return callback(error);
 
           if ( response.statusCode=200){
-            const parsedBody = JSON.parse(body)            
-            if (parsedBody['count']){             
-              const obj =  {            
-                projectId:projectId,
-                projectName:projectName,
-                tipo:'tfs',
-                name:`$/${projectName}`,
-                createdDate:parsedBody.value[0].createdDate ,
-                uniqueName:parsedBody.value[0].checkedInBy.uniqueName ,
-              }
-              repos.push( obj) 
+            const parsedBody = JSON.parse(body)          
+            console.log(`${projectName}`)
+          
+            if (parsedBody['count']){    
+               parsedBody.value.forEach(commit => 
+                memo.push( {            
+                    projectId:projectId,
+                    projectName:projectName,
+                    tipo:'tfs',
+                    name:`$/${projectName}`,
+                    createdDate:commit.createdDate ,
+                    uniqueName:commit.checkedInBy.uniqueName ,
+                    comment:commit.comment
+                  })                      
+                ); 
             }
           }  
-          callback();
+          callback(null,memo);
       } );
   
    
 }
 
 
-run2()
+run()
