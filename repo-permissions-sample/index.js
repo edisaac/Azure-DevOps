@@ -50,7 +50,18 @@ function obtenerReposGit(projects, callback) {
   // arg1 now equals 'three'
   async.eachOfLimit(projects,10,getProjectReposGit, function(err) {
     if (err) return callback(err);
-    callback(null, projects);
+    callback();
+  })
+ 
+}
+
+function obtenerReposGitCommit(callback) {
+
+  console.log(`Git Repos: ${JSON.stringify(gitRepos.length, null, 2)}`)
+  // arg1 now equals 'three'
+  async.eachOfLimit(gitRepos,10,getProjectReposGitCommits , function(err) {
+    if (err) return callback(err);
+    callback(null);
   })
  
 }
@@ -59,11 +70,12 @@ function obtenerReposGit(projects, callback) {
 function run(){
   async.waterfall([
     obtenerProyectos, 
-    //obtenerReposTfsCommits,
-    obtenerReposGit
-], function (err, result) {
+    obtenerReposTfsCommits,
+    obtenerReposGit,
+    obtenerReposGitCommit
+], function (err) {
   if (err)  console.log(err)
-   console.log(gitRepos)
+   console.log(commits)
     // result now equals 'done'
 });
 }
@@ -90,8 +102,9 @@ const getProjectReposTfsCommits = function(project,key, callback) {
                     projectName:projectName,
                     tipo:'tfs',
                     name:`$/${projectName}`,
+                    defaultBranch: 'tfs',
                     createdDate:commit.createdDate ,
-                    uniqueName:commit.checkedInBy.uniqueName ,
+                    email:commit.checkedInBy.uniqueName ,
                     comment:commit.comment
                   })                      
                 ); 
@@ -127,8 +140,46 @@ const getProjectReposGit = function(project,key, callback) {
                 name: repo.name,
                 id: repo.id,
                 defaultBranch: repo["defaultBranch"]? (repo.defaultBranch).replace('refs/heads/','') :null 
+                
               })                      
             ); 
+        }
+      }  
+      callback();
+  } );
+
+
+}
+
+const getProjectReposGitCommits = function(repos,key, callback) {
+
+  const {projectId,projectName,id,name,defaultBranch} = repos
+
+  const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/git/repositories/${id}/commits?searchCriteria.itemVersion.version=${defaultBranch}&api-version=6.0&searchCriteria.$top=${commitLen}`
+ 
+  request.get(url, {timeout: 120000}
+  , function(error, response, body) {
+      if (error) return callback(error);
+
+      if ( response.statusCode=200){
+        const parsedBody = JSON.parse(body)          
+        console.log(`GIT COMMITS:${projectName} - ${name}`)
+      
+        if (parsedBody['count']){    
+          
+           parsedBody.value.forEach(commit =>               
+              commits.push( {            
+                projectId:projectId,
+                projectName:projectName,
+                tipo:'git',
+                name: name,               
+                defaultBranch: defaultBranch,
+                createdDate:commit.committer.date ,
+                email:commit.committer.email ,
+                comment:commit.comment  
+              })                      
+            ); 
+ 
         }
       }  
       callback();
