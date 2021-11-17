@@ -37,9 +37,8 @@ function obtenerReposTfsCommits(projects, callback) {
 
   console.log(`projects: ${JSON.stringify(projects.length, null, 2)}`)
   // arg1 now equals 'three'
-  async.reduce(projects,[],getProjectReposTfs, function(err,result) {
+  async.eachOfLimit(projects,10,getProjectReposTfs, function(err) {
     if (err) return callback(err);
-    commits=result;
     callback(null, projects);
   })
  
@@ -58,7 +57,7 @@ function run(){
 }
 
 
-const getProjectReposTfs = function(memo,project, callback) {
+const getProjectReposTfs = function(project,key, callback) {
 
       const {projectId,projectName} = project
 
@@ -74,7 +73,7 @@ const getProjectReposTfs = function(memo,project, callback) {
           
             if (parsedBody['count']){    
                parsedBody.value.forEach(commit => 
-                memo.push( {            
+                  commits.push( {            
                     projectId:projectId,
                     projectName:projectName,
                     tipo:'tfs',
@@ -86,7 +85,7 @@ const getProjectReposTfs = function(memo,project, callback) {
                 ); 
             }
           }  
-          callback(null,memo);
+          callback();
       } );
   
    
