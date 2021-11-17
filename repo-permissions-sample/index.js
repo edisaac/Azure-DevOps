@@ -10,6 +10,7 @@ const token = process.env.TOKEN;
 // Url to your organization
 const orgName=process.env.ORG_NAME
 const commitLen=process.env.COMMITS_LEN
+const commitDate=process.env.COMMITS_DATE
 const serverUrl = `https://dev.azure.com/${orgName}`; 
 let authHandler = vsoNodeApi.getPersonalAccessTokenHandler(token); 
 let AzDO = new vsoNodeApi.WebApi(serverUrl, authHandler, undefined);
@@ -98,7 +99,7 @@ const getProjectReposTfsCommits = function(project,key, callback) {
 
       const {projectId,projectName} = project
 
-      const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/tfvc/changesets?api-version=6.0&$top=${commitLen}`
+      const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/tfvc/changesets?api-version=6.0&searchCriteria.fromDate=${commitDate}`
      
       request.get(url, {timeout: 120000}
       , function(error, response, body) {
@@ -168,7 +169,7 @@ const getProjectReposGitCommits = function(repos,key, callback) {
 
   const {projectId,projectName,id,name,defaultBranch} = repos
 
-  const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/git/repositories/${id}/commits?searchCriteria.itemVersion.version=${defaultBranch}&api-version=6.0&searchCriteria.$top=${commitLen}`
+  const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/git/repositories/${id}/commits?searchCriteria.itemVersion.version=${defaultBranch}&api-version=6.0&searchCriteria.fromDate=${commitDate}`
  
   request.get(url, {timeout: 120000}
   , function(error, response, body) {
