@@ -103,7 +103,6 @@ const getProjectReposTfsCommits = function(project,key, callback) {
    
 }
 
-
 const getProjectReposGit = function(project,key, callback) {
 
   const {projectId,projectName} = project
