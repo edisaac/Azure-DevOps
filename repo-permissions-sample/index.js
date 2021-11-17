@@ -1,5 +1,6 @@
 const dotenv = require('dotenv');
 const async = require("async");
+const fs = require('fs');
 dotenv.config();
 
 const request =  require('request');
@@ -75,8 +76,20 @@ function run(){
     obtenerReposGitCommit
 ], function (err) {
   if (err)  console.log(err)
-   console.log(commits)
-    // result now equals 'done'
+
+  // stringify JSON Object
+  var jsonContent = JSON.stringify(commits);
+  console.log(commits.length);
+
+  fs.writeFile("output.json", jsonContent, 'utf8', function (err) {
+      if (err) {
+      console.log("An error occured while writing JSON Object to File.");
+          return console.log(err);
+      }
+
+      console.log("JSON file has been saved.");
+  });
+  
 });
 }
 
