@@ -37,7 +37,18 @@ function obtenerReposTfsCommits(projects, callback) {
 
   console.log(`projects: ${JSON.stringify(projects.length, null, 2)}`)
   // arg1 now equals 'three'
-  async.eachOfLimit(projects,10,getProjectReposTfs, function(err) {
+  async.eachOfLimit(projects,10,getProjectReposTfsCommits, function(err) {
+    if (err) return callback(err);
+    callback(null, projects);
+  })
+ 
+}
+
+function obtenerReposGit(projects, callback) {
+
+  console.log(`projects: ${JSON.stringify(projects.length, null, 2)}`)
+  // arg1 now equals 'three'
+  async.eachOfLimit(projects,10,getProjectReposGit, function(err) {
     if (err) return callback(err);
     callback(null, projects);
   })
@@ -48,16 +59,17 @@ function obtenerReposTfsCommits(projects, callback) {
 function run(){
   async.waterfall([
     obtenerProyectos, 
-    obtenerReposTfsCommits,
+    //obtenerReposTfsCommits,
+    obtenerReposGit
 ], function (err, result) {
-  console.log(err)
-  console.log(commits)
+  if (err)  console.log(err)
+   console.log(gitRepos)
     // result now equals 'done'
 });
 }
 
 
-const getProjectReposTfs = function(project,key, callback) {
+const getProjectReposTfsCommits = function(project,key, callback) {
 
       const {projectId,projectName} = project
 
@@ -69,7 +81,7 @@ const getProjectReposTfs = function(project,key, callback) {
 
           if ( response.statusCode=200){
             const parsedBody = JSON.parse(body)          
-            console.log(`${projectName}`)
+            console.log(`TFS COMMITS: ${projectName}`)
           
             if (parsedBody['count']){    
                parsedBody.value.forEach(commit => 
@@ -91,5 +103,39 @@ const getProjectReposTfs = function(project,key, callback) {
    
 }
 
+
+const getProjectReposGit = function(project,key, callback) {
+
+  const {projectId,projectName} = project
+
+  const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/git/repositories?api-version=6.0`
+ 
+  request.get(url, {timeout: 120000}
+  , function(error, response, body) {
+      if (error) return callback(error);
+
+      if ( response.statusCode=200){
+        const parsedBody = JSON.parse(body)          
+        console.log(`GIT REPOS:${projectName}`)
+      
+        if (parsedBody['count']){    
+           
+           parsedBody.value.forEach(repo =>               
+              gitRepos.push( {            
+                projectId:projectId,
+                projectName:projectName,
+                tipo:'git',
+                name: repo.name,
+                id: repo.id,
+                defaultBranch: repo["defaultBranch"]? (repo.defaultBranch).replace('refs/heads/','') :null 
+              })                      
+            ); 
+        }
+      }  
+      callback();
+  } );
+
+
+}
 
 run()
