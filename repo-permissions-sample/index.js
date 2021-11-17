@@ -1,4 +1,5 @@
 const dotenv = require('dotenv');
+const async = require("async");
 dotenv.config();
 
 const request =  require('request');
@@ -11,62 +12,80 @@ const serverUrl = `https://dev.azure.com/${orgName}`;
 let authHandler = vsoNodeApi.getPersonalAccessTokenHandler(token); 
 let AzDO = new vsoNodeApi.WebApi(serverUrl, authHandler, undefined);
 
-async function run() {
-  var constructedProjects = {}
-  
-  try {
-    var coreApi = await AzDO.getCoreApi(); 
-    var projects = await coreApi.getProjects();
-     
-    var i;
-      for (i = 0; i < projects.length; i++) { 
-        const project = projects[i]
-        const obj = {
-          url: project['url'],
-          projectId: project['projectId'],
-          projectName: project['name'] 
-        }
-        if (!constructedProjects[project['projectName']]){
-          constructedProjects[project['projectName']] = [obj]
-        } else {
-          constructedProjects[project['projectName']].push(obj)
-        }
-      }
-      const projectsToUse = await constructedProjects
-      const finalConstruct = await constructTeams(projectsToUse)
-      return finalConstruct
-  } catch(err) {
-    console.log(`err 1 ${JSON.stringify(err, null, 2)}`)
-  }
-}
+let repos = []
 
-const constructTeams = async (projects) => {
-  const obj = {}
-  var coreApi = await AzDO.getCoreApi(); 
-  const ids = Object.keys(projects)
-  await asyncForEach(ids, async (key) => {
-    await asyncForEach(projects[key], async (el) => {
-      const temp = {}
-      const {projectId} = el
-      const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/tfvc/changesets?api-version=6.0&$top=1`
-       
-      request.get(url
-      , function(error, response, body) {
-          const parsedBody = JSON.parse(body)
-          console.log(`tfs: ${JSON.stringify(parsedBody, null, 2)}`)
-          
-      } );
+
+async function getProjects(){
+  let coreApi = await AzDO.getCoreApi(); 
+  let projects = await coreApi.getProjects();
+  let constructedProjects = projects.map(function(project){
+    return   {
+      url: project['url'],
+      projectId: project['id'],
+      projectName: project['name'] 
+    };
+ }); 
+ return constructedProjects
+}
+function myFirstFunction(callback) {
  
-    })
+   getProjects(). then(projects => callback(null,projects));
+}
+ 
+function myLastFunction(projects, callback) {
+  console.log(`projects: ${JSON.stringify(projects.length, null, 2)}`)
+  // arg1 now equals 'three'
+  async.eachSeries(projects,getProjectReposTfs, function(err) {
+
+    console.log(`repos 1 ${JSON.stringify(repos, null, 2)}`)
+
+    if (err) return callback(err);
+    callback(null, 'done');
+      
+    
   })
-  console.log(`Org: ${JSON.stringify(obj, null, 2)}`)
-  return obj
+ 
+}
+function run2(){
+  async.waterfall([
+    myFirstFunction, 
+    myLastFunction,
+], function (err, result) {
+  console.log(err)
+  console.log(result)
+    // result now equals 'done'
+});
 }
 
-async function asyncForEach(array, callback) {
-  for (let index = 0; index < array.length; index++) {
-    await callback(array[index], index, array);
-  }
+
+const getProjectReposTfs = function(project, callback) {
+
+      const {projectId,projectName} = project
+      const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/tfvc/changesets?api-version=6.0&$top=1`
+      console.log(`${projectName}`)
+      request.get(url, {timeout: 120000}
+      , function(error, response, body) {
+          if (error) return callback(error);
+
+          if ( response.statusCode=200){
+            const parsedBody = JSON.parse(body)            
+            if (parsedBody['count']){             
+              const obj =  {            
+                projectId:projectId,
+                projectName:projectName,
+                tipo:'tfs',
+                name:`$/${projectName}`,
+                createdDate:parsedBody.value[0].createdDate ,
+                uniqueName:parsedBody.value[0].checkedInBy.uniqueName ,
+              }
+              repos.push( obj) 
+            }
+          }  
+          callback();
+      } );
+  
+   
 }
 
-run()
+
+run2()
