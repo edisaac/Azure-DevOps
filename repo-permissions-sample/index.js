@@ -99,7 +99,7 @@ const getProjectReposTfsCommits = function(project,key, callback) {
 
       const {projectId,projectName} = project
 
-      const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/tfvc/changesets?api-version=6.0&searchCriteria.fromDate=${commitDate}`
+      const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/tfvc/changesets?api-version=6.0&searchCriteria.fromDate=${commitDate}&$top=${commitLen}`
      
       request.get(url, {timeout: 120000}
       , function(error, response, body) {
@@ -170,7 +170,7 @@ const getProjectReposGitCommits = function(repos,key, callback) {
 
   const {projectId,projectName,id,name,defaultBranch} = repos
 
-  const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/git/repositories/${id}/commits?searchCriteria.itemVersion.version=${defaultBranch}&api-version=6.0&searchCriteria.fromDate=${commitDate}`
+  const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/git/repositories/${id}/commits?searchCriteria.itemVersion.version=${defaultBranch}&api-version=6.0&searchCriteria.fromDate=${commitDate}&searchCriteria.$top=${commitLen}`
  
   request.get(url, {timeout: 120000}
   , function(error, response, body) {
