@@ -1,0 +1,106 @@
+<html>
+<head>
+    <link href="https://use.fontawesome.com/releases/v5.14.0/css/all.css" type="text/css" rel="stylesheet" />
+ 
+    <script type="text/javascript" src=" https://unpkg.com/vis-network@9.1.0/standalone/umd/vis-network.min.js"></script>
+   
+ 
+    <style type="text/css">
+        #mynetwork {
+            width: 700px;
+            height: 600px;
+            border: 1px solid lightgray;
+        }  
+   
+    </style>
+</head>
+<body>
+<div id="mynetwork"></div>
+ 
+<script type="text/javascript">
+    const face = '"Font Awesome 5 Free"'
+    const projectIcon= {  "face":face , "code": "\uf07b" }
+ 
+    const repoIcon= {  "face":face , "code": "\uf07c" }
+    const interIcon = {  "face":face , "code": "\uf247" }
+    const exterIcon = {  "face":face , "code": "\uf248" }
+    const nuggetIcon = {  "face":face , "code": "\uf185" }
+    
+//https://visjs.github.io/vis-network/examples/network/other/html-in-titles.html
+ //diamond, dot, star, triangle, triangleDown, hexagon, square
+    // create an array with nodes
+    var nodes = new vis.DataSet([
+        {id: 1, label: 'App 1', shape:"star",color: '#ff0000' ,size:20},
+        {id: 2, label: 'BD 2',shape:"database" },      
+        {id: 4, label: 'SGS_Framework_2/Business',shape:"icon" , icon:exterIcon},
+        {id: 5, label: 'internal  5',shape:"icon" , icon:interIcon},
+        {id: 6, label: 'Repos 6',shape:"icon" , icon:repoIcon},
+        {id: 7, label: 'Project 7', shape:"icon" , icon:projectIcon},
+        {id: 3, label: 'nugget 3',shape:"icon" , icon:nuggetIcon},
+        {id: 11, label: 'App 1',  shape:"star" ,color: '#ff0000' ,size:20},
+        {id: 51, label: 'internal  5',shape:"icon" , icon:interIcon},
+        {id: 62, label: 'Repos 6',shape:"icon" , icon:repoIcon},
+        {id: 12, label: '',  shape:"star" ,color: '#ffffff' ,size:20},
+    
+    ]);
+
+    // create an array with edges
+    var edges = new vis.DataSet([
+       
+        {from: 1, to: 2},
+        {from: 1, to: 5},
+        {from: 1, to: 4},
+        {from: 6, to: 1},
+        {from: 6, to: 7} ,
+        {from: 11, to: 2},
+        {from: 11, to: 51},
+        {from: 11, to: 4},
+        {from: 6, to: 11},
+        {from: 61, to: 7} ,
+        {from: 62, to: 7} ,
+        {from: 12, to: 62} 
+    ]);
+
+    // create a network
+    var container = document.getElementById('mynetwork');
+
+    // provide the data in the vis format
+    var data = {
+        nodes: nodes,
+        edges: edges
+    };
+    var options = { 
+  
+} 
+
+
+  
+ 
+let regular = new FontFace('regular', 'url(https://use.fontawesome.com/releases/v5.14.0/webfonts/fa-regular-400.woff2)', {
+    style: 'normal',
+    weight: '400'
+});
+
+let solid = new FontFace('solid', 'url(https://use.fontawesome.com/releases/v5.14.0/webfonts/fa-solid-900.woff2)', {
+    style: 'normal',
+    weight: '400'
+});
+
+
+
+
+document.fonts.add(regular);
+document.fonts.add(solid);
+regular.load();
+solid.load();
+
+ 
+    
+document.fonts.ready.then((fontFaceSet) => {
+    var network = new vis.Network(container, data, options);
+  }); 
+
+ 
+</script>
+</body>
+</html>
