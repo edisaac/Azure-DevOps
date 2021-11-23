@@ -92,9 +92,9 @@ function run(){
   // stringify JSON Object
   let repos =[]
  
+   gitRepos.forEach(repo =>repos.push(repo))
+   tfsRepos.forEach(repo =>repos.push(repo))
 
-  repos.concat(gitRepos )
-  repos.concat(tfsRepos )
   jsonContent = JSON.stringify(repos);
   fs.writeFile("repos.json", jsonContent, 'utf8', function (err) {
       if (err) {
