@@ -2,4 +2,6 @@ node_modules
 .env
 
 package-lock.json
-repo-permissions-sample/output.json
+output.json
+repos.json
+commit.json

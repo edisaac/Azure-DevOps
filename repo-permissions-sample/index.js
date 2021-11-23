@@ -17,7 +17,7 @@ let AzDO = new vsoNodeApi.WebApi(serverUrl, authHandler, undefined);
 
 let commits = []
 let gitRepos =[]
-let tfsRepos =[]
+let repos =[]
 
 async function getProjects(){
   let coreApi = await AzDO.getCoreApi(); 
@@ -89,14 +89,9 @@ function run(){
       console.log("JSON file has been saved.");
   });
 
-  // stringify JSON Object
-  let repos =[]
  
-   gitRepos.forEach(repo =>repos.push(repo))
-   tfsRepos.forEach(repo =>repos.push(repo))
-
-  jsonContent = JSON.stringify(repos);
-  fs.writeFile("repos.json", jsonContent, 'utf8', function (err) {
+  let reposjsonContent = JSON.stringify(repos);
+  fs.writeFile("repos.json", reposjsonContent, 'utf8', function (err) {
       if (err) {
       console.log("An error occured while writing JSON Object to File.");
           return console.log(err);
@@ -125,20 +120,23 @@ const getProjectReposTfsCommits = function(project,key, callback) {
           
             if (parsedBody['count']){
 
-              tfsRepos.push( {            
+              let repoItem=
+              {            
                 projectId:projectId,
                 projectName:projectName,
                 tipo:'tfs',
-                name:`$/${projectName}`});
+                name:`$/${projectName}` ,
+                id:projectId,
+                defaultBranch: 'tfs',
+              }
+
+              repos.push( {...repoItem,
+                lastCommit:parsedBody.value[0].createdDate,
+              });
 
                parsedBody.value.forEach(commit => 
-                  commits.push( {            
-                    projectId:projectId,
-                    projectName:projectName,
-                    tipo:'tfs',
-                    name:`$/${projectName}`,
-                    commitId: projectName +'-'+commit.changesetId,    
-                    defaultBranch: 'tfs',
+                  commits.push( { ...repoItem,
+                    commitId: projectName +'-'+commit.changesetId, 
                     createdDate:commit.createdDate ,
                     email:commit.checkedInBy.uniqueName ,
                     comment:commit.comment
@@ -166,8 +164,7 @@ const getProjectReposGit = function(project,key, callback) {
         const parsedBody = JSON.parse(body)          
         console.log(`GIT REPOS:${projectName}`)
       
-        if (parsedBody['count']){    
-           
+        if (parsedBody['count']){     
            parsedBody.value.forEach(repo =>               
               gitRepos.push( {            
                 projectId:projectId,
@@ -201,7 +198,24 @@ const getProjectReposGitCommits = function(repos,key, callback) {
         const parsedBody = JSON.parse(body)          
         console.log(`GIT COMMITS:${projectName} - ${name}`)
       
-        if (parsedBody['count']){    
+        if (parsedBody['count']){  
+          
+          let repoItem=
+          {            
+            projectId:projectId,
+            projectName:projectName,
+            tipo:'git',
+            name: name ,
+            id:id,
+            defaultBranch:defaultBranch,
+          }
+
+              
+          repos.push( {...repoItem,
+            lastCommit:parsedBody.value[0].committer.date,
+          });
+
+
           
            parsedBody.value.forEach(commit =>               
               commits.push( {            
