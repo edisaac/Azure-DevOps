@@ -184,9 +184,9 @@ const getProjectReposGit = function(project,key, callback) {
 
 }
 
-const getProjectReposGitCommits = function(repos,key, callback) {
+const getProjectReposGitCommits = function(reposList,key, callback) {
 
-  const {projectId,projectName,id,name,defaultBranch} = repos
+  const {projectId,projectName,id,name,defaultBranch} = reposList
 
   const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/git/repositories/${id}/commits?searchCriteria.itemVersion.version=${defaultBranch}&api-version=6.0&searchCriteria.fromDate=${commitDate}&searchCriteria.$top=${commitLen}`
  
