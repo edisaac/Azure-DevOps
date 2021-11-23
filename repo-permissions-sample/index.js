@@ -15,8 +15,9 @@ const serverUrl = `https://dev.azure.com/${orgName}`;
 let authHandler = vsoNodeApi.getPersonalAccessTokenHandler(token); 
 let AzDO = new vsoNodeApi.WebApi(serverUrl, authHandler, undefined);
 
-var commits = []
-var gitRepos =[]
+let commits = []
+let gitRepos =[]
+let tfsRepos =[]
 
 async function getProjects(){
   let coreApi = await AzDO.getCoreApi(); 
@@ -80,16 +81,29 @@ function run(){
 
   // stringify JSON Object
   var jsonContent = JSON.stringify(commits);
-  console.log(commits.length);
-
-  fs.writeFile("output.json", jsonContent, 'utf8', function (err) {
+  fs.writeFile("commits.json", jsonContent, 'utf8', function (err) {
       if (err) {
       console.log("An error occured while writing JSON Object to File.");
           return console.log(err);
       }
-
       console.log("JSON file has been saved.");
   });
+
+  // stringify JSON Object
+  let repos =[]
+ 
+
+  repos.concat(gitRepos )
+  repos.concat(tfsRepos )
+  jsonContent = JSON.stringify(repos);
+  fs.writeFile("repos.json", jsonContent, 'utf8', function (err) {
+      if (err) {
+      console.log("An error occured while writing JSON Object to File.");
+          return console.log(err);
+      }
+      console.log("JSON file has been saved.");
+  });
+
   
 });
 }
@@ -109,7 +123,14 @@ const getProjectReposTfsCommits = function(project,key, callback) {
             const parsedBody = JSON.parse(body)          
             console.log(`TFS COMMITS: ${projectName}`)
           
-            if (parsedBody['count']){    
+            if (parsedBody['count']){
+
+              tfsRepos.push( {            
+                projectId:projectId,
+                projectName:projectName,
+                tipo:'tfs',
+                name:`$/${projectName}`});
+
                parsedBody.value.forEach(commit => 
                   commits.push( {            
                     projectId:projectId,
