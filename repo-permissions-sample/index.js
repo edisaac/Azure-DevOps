@@ -132,6 +132,8 @@ const getProjectReposTfsCommits = function(project,key, callback) {
 
               repos.push( {...repoItem,
                 lastCommit:parsedBody.value[0].createdDate,
+                lastCommitter:parsedBody.value[0].checkedInBy.uniqueName,
+                count:parsedBody['count']
               });
 
                parsedBody.value.forEach(commit => 
@@ -213,6 +215,8 @@ const getProjectReposGitCommits = function(reposList,key, callback) {
               
           repos.push( {...repoItem,
             lastCommit:parsedBody.value[0].committer.date,
+            lastCommitter:parsedBody.value[0].committer.email,
+            count:parsedBody['count']
           });
 
 
