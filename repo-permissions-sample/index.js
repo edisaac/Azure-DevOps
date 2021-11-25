@@ -199,28 +199,23 @@ const getProjectReposGitCommits = function(reposList,key, callback) {
       if ( response.statusCode=200){
         const parsedBody = JSON.parse(body)          
         console.log(`GIT COMMITS:${projectName} - ${name}`)
-      
-        if (parsedBody['count']){  
-          
-          let repoItem=
-          {            
-            projectId:projectId,
-            projectName:projectName,
-            tipo:'git',
-            name: name ,
-            id:id,
-            defaultBranch:defaultBranch,
-          }
+        let repoItem=
+        {            
+          projectId:projectId,
+          projectName:projectName,
+          tipo:'git',
+          name: name ,
+          id:id,
+          defaultBranch:defaultBranch,
+        }
 
-              
+
+        if (parsedBody['count']){   
           repos.push( {...repoItem,
             lastCommit: (parsedBody.value[0].committer.date).substring(0,10),
             lastCommitter:parsedBody.value[0].committer.email,
             count:parsedBody['count']
-          });
-
-
-          
+          }); 
            parsedBody.value.forEach(commit =>               
               commits.push( {            
                 projectId:projectId,
@@ -233,8 +228,13 @@ const getProjectReposGitCommits = function(reposList,key, callback) {
                 email:commit.committer.email ,
                 comment:commit.comment  
               })                      
-            ); 
- 
+            );  
+        } else {               
+          repos.push( {...repoItem,
+            lastCommit: '',
+            lastCommitter:'',
+            count:-1
+          });
         }
       }  
       callback();
