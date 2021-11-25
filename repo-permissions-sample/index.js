@@ -79,6 +79,8 @@ function run(){
 ], function (err) {
   if (err)  console.log(err)
 
+
+  console.log(`Git commits: ${JSON.stringify(commits.length, null, 2)}`)
   // stringify JSON Object
   var jsonContent = JSON.stringify(commits);
   fs.writeFile("commits.json", jsonContent, 'utf8', function (err) {
