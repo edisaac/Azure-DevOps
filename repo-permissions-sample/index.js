@@ -210,7 +210,7 @@ const getProjectReposGitCommits = function(reposList,key, callback) {
         }
 
 
-        if (parsedBody['count']){   
+        if (parsedBody['count'] && parsedBody['count']>0 ){   
           repos.push( {...repoItem,
             lastCommit: (parsedBody.value[0].committer.date).substring(0,10),
             lastCommitter:parsedBody.value[0].committer.email,
@@ -230,6 +230,7 @@ const getProjectReposGitCommits = function(reposList,key, callback) {
               })                      
             );  
         } else {               
+          console.log(`----------GIT COMMITS:${projectName} - ${name}`)
           repos.push( {...repoItem,
             lastCommit: '',
             lastCommitter:'',
