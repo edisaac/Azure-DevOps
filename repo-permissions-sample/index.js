@@ -231,11 +231,7 @@ const getProjectReposGitCommits = function(reposList,key, callback) {
             );  
         } else {               
           console.log(`----------GIT COMMITS:${projectName} - ${name}`)
-          repos.push( {...repoItem,
-            lastCommit: '',
-            lastCommitter:'',
-            count:-1
-          });
+          repos.push( {...repoItem});
         }
       }  
       callback();
