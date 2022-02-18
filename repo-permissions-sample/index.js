@@ -16,6 +16,7 @@ let authHandler = vsoNodeApi.getPersonalAccessTokenHandler(token);
 let AzDO = new vsoNodeApi.WebApi(serverUrl, authHandler, undefined);
 
 let commits = []
+let allcommits = []
 let gitRepos =[]
 let repos =[]
 
@@ -69,13 +70,25 @@ function obtenerReposGitCommit(callback) {
  
 }
 
+function obtenerReposGitAllCommit(callback) {
+
+  console.log(`Git Repos: ${JSON.stringify(gitRepos.length, null, 2)}`)
+  // arg1 now equals 'three'
+  async.eachOfLimit(gitRepos,10,getProjectReposGitAllCommits , function(err) {
+    if (err) return callback(err);
+    callback(null);
+  })
+ 
+}
+
  
 function run(){
   async.waterfall([
     obtenerProyectos, 
     obtenerReposTfsCommits,
     obtenerReposGit,
-    obtenerReposGitCommit
+    obtenerReposGitCommit,
+    obtenerReposGitAllCommit
 ], function (err) {
   if (err)  console.log(err)
 
@@ -84,6 +97,17 @@ function run(){
   // stringify JSON Object
   var jsonContent = JSON.stringify(commits);
   fs.writeFile("commits.json", jsonContent, 'utf8', function (err) {
+      if (err) {
+      console.log("An error occured while writing JSON Object to File.");
+          return console.log(err);
+      }
+      console.log("JSON file has been saved.");
+  });
+
+  console.log(`Git allcommits: ${JSON.stringify(allcommits.length, null, 2)}`)
+  // stringify JSON Object
+  var jsonContent = JSON.stringify(allcommits);
+  fs.writeFile("allcommits.json", jsonContent, 'utf8', function (err) {
       if (err) {
       console.log("An error occured while writing JSON Object to File.");
           return console.log(err);
@@ -235,6 +259,44 @@ const getProjectReposGitCommits = function(reposList,key, callback) {
           console.log(`----------GIT COMMITS:${projectName} - ${name}`)
           repos.push( {...repoItem});
         }
+      }  
+      callback();
+  } );
+
+
+}
+
+const getProjectReposGitAllCommits = function(reposList,key, callback) {
+
+  const {projectId,projectName,id,name,defaultBranch} = reposList
+
+  const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/git/repositories/${id}/commits?api-version=6.0&searchCriteria.fromDate=${commitDate}&searchCriteria.$top=${commitLen}`
+ 
+  request.get(url, {timeout: 120000}
+  , function(error, response, body) {
+      if (error) return callback(error);
+
+      if ( response.statusCode=200){
+        const parsedBody = JSON.parse(body)          
+        console.log(`ALL GIT COMMITS:${projectName} - ${name}`)
+      
+
+        if (parsedBody['count'] && parsedBody['count']>0 ){   
+ 
+           parsedBody.value.forEach(commit =>               
+            allcommits.push( {            
+                projectId:projectId,
+                projectName:projectName,
+                tipo:'git',
+                name: name, 
+                commitId: commit.commitId,              
+                defaultBranch: 'Other',
+                createdDate:commit.committer.date ,
+                email:commit.committer.email ,
+                comment:commit.comment  
+              })                      
+            );  
+        }  
       }  
       callback();
   } );
