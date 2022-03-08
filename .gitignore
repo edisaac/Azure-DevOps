@@ -5,3 +5,7 @@ package-lock.json
 output.json
 repos.json
 commit.json
+
+repo-permissions-sample/allcommits.json
+
+repo-permissions-sample/commits.json
