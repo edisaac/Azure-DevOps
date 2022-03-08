@@ -113,7 +113,7 @@ function run(){
 
   console.log(`Git uniqueObjArray: ${JSON.stringify(uniqueObjArray.length, null, 2)}`)
   // stringify JSON Object
-  var jsonContent = JSON.stringify(allcommits);
+  var jsonContent = JSON.stringify(uniqueObjArray);
   fs.writeFile("allcommits.json", jsonContent, 'utf8', function (err) {
       if (err) {
       console.log("An error occured while writing JSON Object to File.");
