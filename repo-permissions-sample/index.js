@@ -105,6 +105,13 @@ function run(){
   });
 
   console.log(`Git allcommits: ${JSON.stringify(allcommits.length, null, 2)}`)
+  allcommits.concat(commits);
+  let uniqueObjArray = [
+    ...new Map(allcommits.map((item) => [item["commitId"], item])).values(),
+  ];
+  console.log(`Git all: ${JSON.stringify(allcommits.length, null, 2)}`)
+
+  console.log(`Git uniqueObjArray: ${JSON.stringify(uniqueObjArray.length, null, 2)}`)
   // stringify JSON Object
   var jsonContent = JSON.stringify(allcommits);
   fs.writeFile("allcommits.json", jsonContent, 'utf8', function (err) {
