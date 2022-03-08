@@ -105,7 +105,7 @@ function run(){
   });
 
   console.log(`Git allcommits: ${JSON.stringify(allcommits.length, null, 2)}`)
-  allcommits.concat(commits);
+  allcommits=allcommits.concat(commits);
   console.log(`Git all: ${JSON.stringify(allcommits.length, null, 2)}`)
   let uniqueObjArray = [
     ...new Map(allcommits.map((item) => [item["commitId"], item])).values(),
