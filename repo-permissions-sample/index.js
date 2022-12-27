@@ -231,7 +231,7 @@ const getProjectReposGit = function(project,key, callback) {
 
 const getProjectReposGitCommits = function(reposList,key, callback) {
 
-  const {projectId,projectName,id,name,defaultBranch,branch} = reposList
+  const {projectId,projectName,id,name,defaultBranch,branch,creator} = reposList
 
   const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/git/repositories/${id}/commits?searchCriteria.itemVersion.version=${branch}&api-version=6.0&searchCriteria.fromDate=${commitDate}&searchCriteria.$top=${commitLen}`
  
@@ -265,6 +265,7 @@ const getProjectReposGitCommits = function(reposList,key, callback) {
                 projectName:projectName,
                 tipo:'git',
                 name: name, 
+                branchcreator:creator,
                 commitId: commit.commitId, 
                 branch:     branch     ,    
                 defaultBranch: branch===defaultBranch?1:0,
@@ -312,6 +313,7 @@ const getbranchs = function(reposList,key, callback) {
               name: name,
               id: id,              
               defaultBranch:defaultBranch,
+              creator: branch.creator.displayName,
               branch:  (branch.name).replace('refs/heads/','') 
               })                      
             );  
