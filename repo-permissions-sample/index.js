@@ -84,8 +84,7 @@ function obtenerReposGitAllCommit(callback) {
  
 function run(){
   async.waterfall([
-    obtenerProyectos, 
-    obtenerReposTfsCommits,
+    obtenerProyectos,     
     obtenerReposGit,
     obtenerReposGitCommit,
     obtenerReposGitAllCommit
