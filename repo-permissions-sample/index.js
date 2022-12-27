@@ -16,9 +16,10 @@ let authHandler = vsoNodeApi.getPersonalAccessTokenHandler(token);
 let AzDO = new vsoNodeApi.WebApi(serverUrl, authHandler, undefined);
 
 let commits = []
-let allcommits = []
+ 
 let gitRepos =[]
 let repos =[]
+let branchsList =[]
 
 async function getProjects(){
   let coreApi = await AzDO.getCoreApi(); 
@@ -63,18 +64,18 @@ function obtenerReposGitCommit(callback) {
 
   console.log(`Git Repos: ${JSON.stringify(gitRepos.length, null, 2)}`)
   // arg1 now equals 'three'
-  async.eachOfLimit(gitRepos,10,getProjectReposGitCommits , function(err) {
+  async.eachOfLimit(branchsList,10,getProjectReposGitCommits , function(err) {
     if (err) return callback(err);
     callback(null);
   })
  
 }
 
-function obtenerReposGitAllCommit(callback) {
+function obtenerBranchs(callback) {
 
   console.log(`Git Repos: ${JSON.stringify(gitRepos.length, null, 2)}`)
   // arg1 now equals 'three'
-  async.eachOfLimit(gitRepos,10,getProjectReposGitAllCommits , function(err) {
+  async.eachOfLimit(gitRepos,10,getbranchs , function(err) {
     if (err) return callback(err);
     callback(null);
   })
@@ -86,16 +87,18 @@ function run(){
   async.waterfall([
     obtenerProyectos,     
     obtenerReposGit,
-    obtenerReposGitCommit,
-    obtenerReposGitAllCommit
+    obtenerBranchs,
+    obtenerReposGitCommit
 ], function (err) {
   if (err)  console.log(err)
 
 
   console.log(`Git commits: ${JSON.stringify(commits.length, null, 2)}`)
   // stringify JSON Object
-  var jsonContent = JSON.stringify(commits);
-  fs.writeFile("commits.json", jsonContent, 'utf8', function (err) {
+  
+  commits=commits.sort((a, b) => b.defaultBranch-a.defaultBranch);
+  
+  fs.writeFile("commits.json", JSON.stringify(commits), 'utf8', function (err) {
       if (err) {
       console.log("An error occured while writing JSON Object to File.");
           return console.log(err);
@@ -103,11 +106,18 @@ function run(){
       console.log("JSON file has been saved.");
   });
 
-  console.log(`Git allcommits: ${JSON.stringify(allcommits.length, null, 2)}`)
-  allcommits=allcommits.concat(commits);
-  console.log(`Git all: ${JSON.stringify(allcommits.length, null, 2)}`)
+  fs.writeFile("branchsList.json",  JSON.stringify(branchsList), 'utf8', function (err) {
+    if (err) {
+    console.log("An error occured while writing JSON Object to File.");
+        return console.log(err);
+    }
+    console.log("JSON file has been saved.");
+});
+
+  
+
   let uniqueObjArray = [
-    ...new Map(allcommits.map((item) => [item["commitId"], item])).values(),
+    ...new Map(commits.map((item) => [item["commitId"], item])).values(),
   ];
 
 
@@ -221,9 +231,9 @@ const getProjectReposGit = function(project,key, callback) {
 
 const getProjectReposGitCommits = function(reposList,key, callback) {
 
-  const {projectId,projectName,id,name,defaultBranch} = reposList
+  const {projectId,projectName,id,name,defaultBranch,branch} = reposList
 
-  const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/git/repositories/${id}/commits?searchCriteria.itemVersion.version=${defaultBranch}&api-version=6.0&searchCriteria.fromDate=${commitDate}&searchCriteria.$top=${commitLen}`
+  const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/git/repositories/${id}/commits?searchCriteria.itemVersion.version=${branch}&api-version=6.0&searchCriteria.fromDate=${commitDate}&searchCriteria.$top=${commitLen}`
  
   request.get(url, {timeout: 120000}
   , function(error, response, body) {
@@ -231,7 +241,7 @@ const getProjectReposGitCommits = function(reposList,key, callback) {
 
       if ( response.statusCode=200){
         const parsedBody = JSON.parse(body)          
-        console.log(`GIT COMMITS:${projectName} - ${name}`)
+        console.log(`GIT COMMITS:${projectName} - ${name} - ${branch}`)
         let repoItem=
         {            
           projectId:projectId,
@@ -255,8 +265,9 @@ const getProjectReposGitCommits = function(reposList,key, callback) {
                 projectName:projectName,
                 tipo:'git',
                 name: name, 
-                commitId: commit.commitId,              
-                defaultBranch: defaultBranch,
+                commitId: commit.commitId, 
+                branch:     branch     ,    
+                defaultBranch: branch===defaultBranch?1:0,
                 createdDate:commit.committer.date ,
                 email:commit.committer.email ,
                 comment:commit.comment  
@@ -273,34 +284,35 @@ const getProjectReposGitCommits = function(reposList,key, callback) {
 
 }
 
-const getProjectReposGitAllCommits = function(reposList,key, callback) {
+
+
+const getbranchs = function(reposList,key, callback) {
 
   const {projectId,projectName,id,name,defaultBranch} = reposList
 
-  const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/git/repositories/${id}/commits?api-version=6.0&searchCriteria.fromDate=${commitDate}&searchCriteria.$top=${commitLen}`
- 
+  const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/git/repositories/${id}/refs?api-version=7.0`
+  
+
   request.get(url, {timeout: 120000}
   , function(error, response, body) {
       if (error) return callback(error);
 
       if ( response.statusCode=200){
         const parsedBody = JSON.parse(body)          
-        console.log(`ALL GIT COMMITS:${projectName} - ${name}`)
+        console.log(`ALL BRANCHS:${projectName} - ${name}`)
       
-
         if (parsedBody['count'] && parsedBody['count']>0 ){   
  
-           parsedBody.value.forEach(commit =>               
-            allcommits.push( {            
-                projectId:projectId,
-                projectName:projectName,
-                tipo:'git',
-                name: name, 
-                commitId: commit.commitId,              
-                defaultBranch: 'Other',
-                createdDate:commit.committer.date ,
-                email:commit.committer.email ,
-                comment:commit.comment  
+           parsedBody.value.forEach(branch => 
+             
+            branchsList.push( {            
+              projectId:projectId,
+              projectName:projectName,
+              tipo:'git',
+              name: name,
+              id: id,              
+              defaultBranch:defaultBranch,
+              branch:  (branch.name).replace('refs/heads/','') 
               })                      
             );  
         }  
@@ -310,5 +322,4 @@ const getProjectReposGitAllCommits = function(reposList,key, callback) {
 
 
 }
-
 run()
