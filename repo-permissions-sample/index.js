@@ -38,17 +38,6 @@ function obtenerProyectos(callback) {
    getProjects(). then(projects => callback(null,projects));
 }
  
-function obtenerReposTfsCommits(projects, callback) {
-
-  console.log(`projects: ${JSON.stringify(projects.length, null, 2)}`)
-  // arg1 now equals 'three'
-  async.eachOfLimit(projects,10,getProjectReposTfsCommits, function(err) {
-    if (err) return callback(err);
-    callback(null, projects);
-  })
- 
-}
-
 function obtenerReposGit(projects, callback) {
 
   console.log(`projects: ${JSON.stringify(projects.length, null, 2)}`)
@@ -60,9 +49,23 @@ function obtenerReposGit(projects, callback) {
  
 }
 
-function obtenerReposGitCommit(callback) {
+function obtenerBranchs(callback) {
 
   console.log(`Git Repos: ${JSON.stringify(gitRepos.length, null, 2)}`)
+
+  // arg1 now equals 'three'
+  async.eachOfLimit(gitRepos,10,getbranchs , function(err) {
+    if (err) return callback(err);
+    callback(null);
+  })
+ 
+}
+
+
+function obtenerReposGitCommit(callback) {
+
+  branchsList = branchsList.filter( item => !( ['history', 'develop', 'test'].includes(item.branch))  );
+  console.log(`Git branchsList: ${JSON.stringify(branchsList.length, null, 2)}`)
   // arg1 now equals 'three'
   async.eachOfLimit(branchsList,10,getProjectReposGitCommits , function(err) {
     if (err) return callback(err);
@@ -71,16 +74,6 @@ function obtenerReposGitCommit(callback) {
  
 }
 
-function obtenerBranchs(callback) {
-
-  console.log(`Git Repos: ${JSON.stringify(gitRepos.length, null, 2)}`)
-  // arg1 now equals 'three'
-  async.eachOfLimit(gitRepos,10,getbranchs , function(err) {
-    if (err) return callback(err);
-    callback(null);
-  })
- 
-}
 
  
 function run(){
@@ -147,53 +140,7 @@ function run(){
 }
 
 
-const getProjectReposTfsCommits = function(project,key, callback) {
 
-      const {projectId,projectName} = project
-
-      const url = `https://${token}@dev.azure.com/${orgName}/${projectId}/_apis/tfvc/changesets?api-version=6.0&searchCriteria.fromDate=${commitDate}&$top=${commitLen}`
-     
-      request.get(url, {timeout: 120000}
-      , function(error, response, body) {
-          if (error) return callback(error);
-
-          if ( response.statusCode=200){
-            const parsedBody = JSON.parse(body)          
-            console.log(`TFS COMMITS: ${projectName}`)
-          
-            if (parsedBody['count']){
-
-              let repoItem=
-              {            
-                projectId:projectId,
-                projectName:projectName,
-                tipo:'tfs',
-                name:`$/${projectName}` ,
-                id:projectId,
-                defaultBranch: 'tfs',
-              }
-
-              repos.push( {...repoItem,
-                lastCommit:(parsedBody.value[0].createdDate).substring(0,10),
-                lastCommitter:parsedBody.value[0].checkedInBy.uniqueName,
-                count:parsedBody['count']
-              });
-
-               parsedBody.value.forEach(commit => 
-                  commits.push( { ...repoItem,
-                    commitId: projectName +'-'+commit.changesetId, 
-                    createdDate:commit.createdDate ,
-                    email:commit.checkedInBy.uniqueName ,
-                    comment:commit.comment
-                  })                      
-                ); 
-            }
-          }  
-          callback();
-      } );
-  
-   
-}
 
 const getProjectReposGit = function(project,key, callback) {
 
